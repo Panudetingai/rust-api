@@ -1,18 +1,19 @@
 mod entity;
 mod handlers;
+mod middleware;
+mod ratelimit;
 mod routes;
 mod utils;
-use std::env;
 
 use axum::{
     Router,
-    extract::State,
     http::{
         HeaderValue,
         header::{AUTHORIZATION, CONTENT_TYPE},
     },
 };
 use sea_orm::DatabaseConnection;
+use std::env;
 use tower_http::cors::{Any, CorsLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -26,15 +27,16 @@ async fn main() {
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
         .init();
+
     dotenvy::dotenv().ok();
 
     let cors_layer = CorsLayer::new()
         .allow_methods(Any)
         .allow_origin(
             env::var("FRONT_APP_URL")
-                .unwrap()
+                .expect("FRONT_APP_URL not set")
                 .parse::<HeaderValue>()
-                .unwrap(),
+                .expect("Invalid FRONT_APP_URL header value"),
         )
         .allow_headers([AUTHORIZATION, CONTENT_TYPE]);
 
@@ -44,12 +46,19 @@ async fn main() {
 
     let app = Router::new()
         .nest("/api", routes::users::users_router().await)
+        .route_layer(axum::middleware::from_fn(middleware::auth_middleware)) // เรียกใช้ log_ip_middleware
+        .layer(ratelimit::ratelimitapi())
         .nest("/api", routes::auth::auth_router().await)
         .with_state(state)
         .layer(cors_layer);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8880").await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<std::net::SocketAddr>(),
+    )
+    .await
+    .unwrap();
 
     println!("Server running on http://0.0.0.0:8880");
 }
