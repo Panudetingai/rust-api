@@ -1,6 +1,7 @@
 use axum::{Json, extract::State};
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, Set};
 use serde::Deserialize;
+use uuid::Uuid;
 
 use crate::{AppState, entity::users, utils::lib::error::AppError};
 
@@ -18,7 +19,7 @@ pub async fn get_user_all(State(state): State<AppState>) -> Json<Vec<users::Mode
 #[serde(deny_unknown_fields)]
 
 pub struct GetUserQuery {
-    pub id: Option<i32>,
+    pub id: Option<Uuid>,
     pub email: Option<String>,
     pub name: Option<String>,
 }
@@ -70,10 +71,10 @@ pub async fn create_user(
     let active_user = users::ActiveModel {
         name: Set(payload.name),
         email: Set(payload.email),
-        password_hash: Set(payload.password),
+        password: Set(payload.password),
         created_at: Set(payload
             .created_at
-            .or_else(|| Some(chrono::Utc::now().naive_utc()))),
+            .unwrap_or_else(|| chrono::Utc::now().naive_utc())),
         ..Default::default()
     };
 
@@ -95,7 +96,7 @@ pub async fn create_user(
 
 #[derive(Deserialize)]
 pub struct UpdateUserRequest {
-    pub id: i32,
+    pub id: Uuid,
     pub name: Option<String>,
     pub email: Option<String>,
     pub password: Option<String>,
@@ -109,7 +110,7 @@ pub async fn update_user(
         id: Set(payload.id),
         name: Set(payload.name.unwrap_or_default()),
         email: Set(payload.email.unwrap_or_default()),
-        password_hash: Set(payload.password.unwrap_or_default()),
+        password: Set(payload.password.unwrap_or_default()),
         ..Default::default()
     };
 
@@ -132,7 +133,7 @@ pub async fn update_user(
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct DeleteRequest {
-    pub id: i32,
+    pub id: Uuid,
 }
 // delete handler to be implemented
 pub async fn delete_user(

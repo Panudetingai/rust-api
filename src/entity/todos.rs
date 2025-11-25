@@ -3,19 +3,17 @@
 use sea_orm::entity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
-#[sea_orm(table_name = "todo_list")]
+#[sea_orm(table_name = "todos")]
 pub struct Model {
-    #[sea_orm(primary_key)]
-    pub id: i32,
-    pub user_id: i32,
+    #[sea_orm(primary_key, auto_increment = false)]
+    pub id: Uuid,
+    pub user_id: Option<Uuid>,
     pub title: String,
     #[sea_orm(column_type = "Text", nullable)]
     pub description: Option<String>,
-    pub status: Option<String>,
-    pub priority: Option<String>,
-    pub due_date: Option<Date>,
-    pub created_at: Option<DateTime>,
-    pub updated_at: Option<DateTime>,
+    pub completed: bool,
+    pub created_at: DateTime,
+    pub updated_at: DateTime,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -25,7 +23,7 @@ pub enum Relation {
         from = "Column::UserId",
         to = "super::users::Column::Id",
         on_update = "NoAction",
-        on_delete = "NoAction"
+        on_delete = "Cascade"
     )]
     Users,
 }

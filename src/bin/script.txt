@@ -1,0 +1,35 @@
+// use rand::prelude::*;
+// use sea_orm::{ConnectionTrait, DatabaseBackend, Statement};
+
+// #[tokio::main]
+// pub async fn main() {
+//     let db = sea_orm::Database::connect("postgres://panudet:panudet@localhost/rust_db")
+//         .await
+//         .expect("Failed to connect to database");
+
+//     for _ in 0..500 {
+//         let name: String = rand::thread_rng()
+//             .sample_iter(rand::distr::Alphanumeric)
+//             .take(8)
+//             .map(char::from)
+//             .collect();
+
+//         let email_user: String = rand::thread_rng()
+//             .sample_iter(rand::distr::Alphanumeric)
+//             .take(6)
+//             .map(char::from)
+//             .collect();
+
+//         let email = format!("{}@example.com", email_user);
+
+//         let sql = format!(
+//             "INSERT INTO users (name, email, password, created_at, updated_at)
+//              VALUES ('{}', '{}', '{}', NOW(), NOW())",
+//             name, email, "password"
+//         );
+//         println!("Inserting user: {} with email: {} Count", name, email);
+
+//         let stmt = Statement::from_string(DatabaseBackend::Postgres, sql);
+//         let _ = db.execute(stmt).await;
+//     }
+// }
