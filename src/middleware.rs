@@ -21,14 +21,18 @@ pub async fn auth_middleware(req: Request, next: Next) -> Result<Response, Statu
         .body(body.into())
         .unwrap();
 
-    if let Some(token) = auth_header {
-        // Here you would normally validate the token
-        if token == "valid_token" {
-            let response = next.run(req).await;
-            Ok(response)
-        } else {
-            Ok(response)
+    if let Some(auth_header) = req
+        .headers()
+        .get("Authorization")
+        .and_then(|h| h.to_str().ok())
+    {
+        if let Some(token) = auth_header.strip_prefix("Bearer ").map(str::trim) {
+            if !token.is_empty() {
+                let response = next.run(req).await;
+                return Ok(response);
+            }
         }
+        Ok(response)
     } else {
         Ok(response)
     }

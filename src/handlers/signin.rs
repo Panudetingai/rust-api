@@ -1,7 +1,8 @@
-use crate::{AppState, entity::users, utils::lib::error::AppError};
-use argon2::{Argon2, PasswordHash, password_hash::PasswordVerifier};
-use axum::{Json, extract::State};
-use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
+use crate::{
+    AppState,
+    func::auth::login_handler::{self},
+};
+use axum::{Json, extract::State, response::IntoResponse};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -14,26 +15,18 @@ pub struct SigninRequest {
 pub async fn signin(
     State(state): State<AppState>,
     Json(payload): Json<SigninRequest>,
-) -> Result<Json<users::Model>, AppError> {
-    let user = users::Entity::find()
-        .filter(users::Column::Email.eq(payload.email))
-        .one(&state.db)
-        .await
-        .map_err(AppError::DatabaseError)?;
+) -> impl axum::response::IntoResponse {
+    let login = login_handler::login_handler(
+        State(state),
+        Json(login_handler::LoginPayload {
+            email: payload.email.clone(),
+            password: payload.password.clone(),
+        }),
+    )
+    .await;
 
-    match user {
-        Some(user) => {
-            let parsed_hash = PasswordHash::new(&user.password)
-                .map_err(|_| AppError::UnauthorizedError("Invalid email or password".into()))?;
-            let argon2 = Argon2::default();
-            argon2
-                .verify_password(payload.password.as_bytes(), &parsed_hash)
-                .map_err(|_| AppError::UnauthorizedError("Invalid email or password".into()))?;
-
-            Ok(Json(user))
-        }
-        None => Err(AppError::UnauthorizedError(
-            "Invalid email or password".into(),
-        )),
+    match login {
+        Ok(response) => response.into_response(),
+        Err(err_response) => err_response.into_response(),
     }
 }

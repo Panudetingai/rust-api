@@ -4,6 +4,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 
+use sea_orm::DbErr;
 use serde_json::json;
 
 pub enum AppError {

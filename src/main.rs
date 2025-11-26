@@ -1,4 +1,5 @@
 mod entity;
+mod func;
 mod handlers;
 mod middleware;
 mod ratelimit;
