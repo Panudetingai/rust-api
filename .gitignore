@@ -1,5 +1,4 @@
 /target
-/migration/src/*.rs
 /migration/target
 !.migration/src/m20220101_000001_create_table.rs
 
